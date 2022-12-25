@@ -76,9 +76,7 @@ const start = () => {
 };
 
 const login = () => {
-  signInWithPopup(auth, providerGoogle)
-  alert("S978797897");
-    
+  signInWithPopup(auth, providerGoogle)    
     .then((result) => {
       const credential = GoogleAuthProvider.credentialFromResult(result);
       // console.log("credential: ", credential);

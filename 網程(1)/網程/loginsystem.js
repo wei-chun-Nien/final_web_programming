@@ -1,128 +1,211 @@
-const express = require('express');
-const router = express.Router();
-const User = require('../models/user');
+// Import the functions you need from the SDKs you need
 
-router.get('/', (req, res, next) => {
-	return res.render('index.ejs');
-});
+// import { initializeApp } from "firebase/app";
+// import {
+//   getAuth,
+//   deleteUser,
+//   signInWithPopup,
+//   GoogleAuthProvider,
+// } from "firebase/auth";
+// import {
+//   getFirestore,
+//   doc,
+//   collection,
+//   setDoc,
+//   getDoc,
+//   getDocs,
+//   updateDoc,
+//   deleteDoc,
+// } from "firebase/firestore";
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+import { getAnalytics } from "firebase/analytics";
+import {
+  getAuth,
+  deleteUser,
+  signInWithPopup,
+  GoogleAuthProvider,
+} from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  collection,
+  setDoc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+} from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-router.post('/', (req, res, next) => {
-	let personInfo = req.body;
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-	if (!personInfo.email || !personInfo.username || !personInfo.password || !personInfo.passwordConf) {
-		res.send();
-	} else {
-		if (personInfo.password == personInfo.passwordConf) {
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBYBt9Gx0BQU25p4sz-Ex54EPXo1b9_K2w",
+  authDomain: "fir-web-programing.firebaseapp.com",
+  databaseURL: "https://fir-web-programing-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "fir-web-programing",
+  storageBucket: "fir-web-programing.appspot.com",
+  messagingSenderId: "828209721818",
+  appId: "1:828209721818:web:4a228e3f1514ea6d3390e3",
+  measurementId: "G-K0TECEYRKK"
+};
 
-			User.findOne({ email: personInfo.email }, (err, data) => {
-				if (!data) {
-					let c;
-					User.findOne({}, (err, data) => {
+// Initialize Firebase
 
-						if (data) {
-							c = data.unique_id + 1;
-						} else {
-							c = 1;
-						}
+initializeApp(firebaseConfig);
 
-						let newPerson = new User({
-							unique_id: c,
-							email: personInfo.email,
-							username: personInfo.username,
-							password: personInfo.password,
-							passwordConf: personInfo.passwordConf
-						});
+const auth = getAuth();
+const providerGoogle = new GoogleAuthProvider();
+const db = getFirestore();
 
-						newPerson.save((err, Person) => {
-							if (err)
-								console.log(err);
-							else
-								console.log('Success');
-						});
+const start = () => {
+  document.getElementById("login").addEventListener("click", login);
+  document.getElementById("logout").addEventListener("click", logout);
+  document
+    .getElementById("delete-account")
+    .addEventListener("click", deleteAccount);
+  document.getElementById("create").addEventListener("click", createContent);
+  document.getElementById("read").addEventListener("click", readContent);
+  document.getElementById("update").addEventListener("click", updateContent);
+  document.getElementById("delete").addEventListener("click", deleteContent);
+};
 
-					}).sort({ _id: -1 }).limit(1);
-					res.send({ "Success": "You are regestered,You can login now." });
-				} else {
-					res.send({ "Success": "Email is already used." });
-				}
+const login = () => {
+  signInWithPopup(auth, providerGoogle)
+    
+    .then((result) => {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      // console.log("credential: ", credential);
+      const token = credential.accessToken;
+      // console.log("token: ", token);
+      const user = result.user;
+      console.log("user: ", user);
+      console.log("userEmail: ", user.email);
+      document.querySelector(".login").style.display = "none";
+      document.querySelector(".container").style.display = "block";
+    })
+    .catch((error) => {
+      alert("Something was wrong.");
+      console.log();
+      console.log("error ==================");
+      const errorCode = error.code;
+      console.log("errorCode: ", errorCode);
+      const errorMessage = error.message;
+      console.log("errorMessage: ", errorMessage);
+      const email = error.email;
+      console.log("email: ", email);
+      const credential = GoogleAuthProvider.credentialFromError(error);
+      // console.log("credential: ", credential);
+    });
+};
 
-			});
-		} else {
-			res.send({ "Success": "password is not matched" });
-		}
-	}
-});
+const logout = () => {
+  auth
+    .signOut()
+    .then(() => {
+      document.querySelector(".container").style.display = "none";
+      document.querySelector(".login").style.display = "block";
+      alert("You've been logged out.");
+    })
+    .catch((error) => {
+      alert("Something was wrong.");
+      console.log("error: ", error);
+    });
+};
 
-router.get('/login', (req, res, next) => {
-	return res.render('login.ejs');
-});
+const deleteAccount = () => {
+  const user = auth.currentUser;
+  deleteUser(user)
+    .then(() => {
+      document.querySelector(".container").style.display = "none";
+      document.querySelector(".login").style.display = "block";
+      alert("亲 你号没了");
+    })
+    .catch((error) => {
+      alert("Something was wrong.");
+      console.log("error: ", error);
+    });
+};
 
-router.post('/login', (req, res, next) => {
-	User.findOne({ email: req.body.email }, (err, data) => {
-		if (data) {
+const createContent = () => {
+  const userEmail = auth.currentUser.email;
+  const diaryTitle = document.getElementById("diary-title").value;
+  const diaryContent = document.getElementById("diary-content").value;
+  try {
+    setDoc(doc(db, userEmail, diaryTitle), {
+      timestamp: new Date(Date.now()),
+      title: diaryTitle,
+      content: diaryContent,
+    });
+    alert('Created: "' + diaryTitle + '"');
+    document.getElementById("diary-title").value = "";
+    document.getElementById("diary-content").value = "";
+  } catch (err) {
+    alert("Something was wrong.");
+    console.error("Error: ", err);
+  }
+};
 
-			if (data.password == req.body.password) {
-				req.session.userId = data.unique_id;
-				res.send({ "Success": "Success!" });
-			} else {
-				res.send({ "Success": "Wrong password!" });
-			}
-		} else {
-			res.send({ "Success": "This Email Is not regestered!" });
-		}
-	});
-});
+const readContent = () => {
+  document.getElementById("diary-content").value = "";
+  const userEmail = auth.currentUser.email;
+  const diaryTitle = document.getElementById("diary-title").value;
 
-router.get('/profile', (req, res, next) => {
-	User.findOne({ unique_id: req.session.userId }, (err, data) => {
-		if (!data) {
-			res.redirect('/');
-		} else {
-			return res.render('data.ejs', { "name": data.username, "email": data.email });
-		}
-	});
-});
+  if (diaryTitle === "") {
+    getDocs(collection(db, userEmail)).then((querySnapshot) => {
+      if (querySnapshot.length === 0) {
+        alert("no content yet.");
+        return;
+      }
+      querySnapshot.forEach((doc) => {
+        console.log(doc.id, doc.data().content);
+        document.getElementById("diary-content").value += doc.id;
+        document.getElementById("diary-content").value += ":\n";
+        document.getElementById("diary-content").value += doc.data().content;
+        document.getElementById("diary-content").value += "\n\n\n";
+      });
+    });
+  } else {
+    getDoc(doc(db, userEmail, diaryTitle)).then((docSnap) => {
+      if (docSnap.exists()) {
+        console.log("diary content: ", docSnap.data());
+        document.getElementById("diary-content").value = docSnap.data().content;
+      } else {
+        alert("no such data.");
+      }
+    });
+  }
+};
 
-router.get('/logout', (req, res, next) => {
-	if (req.session) {
-		// delete session object
-		req.session.destroy((err) => {
-			if (err) {
-				return next(err);
-			} else {
-				return res.redirect('/');
-			}
-		});
-	}
-});
+const updateContent = () => {
+  const userEmail = auth.currentUser.email;
+  const diaryTitle = document.getElementById("diary-title").value;
+  const diaryContent = document.getElementById("diary-content").value;
+  try {
+    updateDoc(doc(db, userEmail, diaryTitle), {
+      timestamp: new Date(Date.now()),
+      title: diaryTitle,
+      content: diaryContent,
+    });
+    alert('Updated: "' + diaryTitle + '"');
+    document.getElementById("diary-title").value = "";
+    document.getElementById("diary-content").value = "";
+  } catch (err) {
+    alert("Something was wrong.");
+    console.error("Error: ", err);
+  }
+};
 
-router.get('/forgetpass', (req, res, next) => {
-	res.render("forget.ejs");
-});
+const deleteContent = () => {
+  const userEmail = auth.currentUser.email;
+  const diaryTitle = document.getElementById("diary-title").value;
+  deleteDoc(doc(db, userEmail, diaryTitle));
+  alert('Deleted: "' + diaryTitle + '"');
+  document.getElementById("diary-title").value = "";
+  document.getElementById("diary-content").value = "";
+};
 
-router.post('/forgetpass', (req, res, next) => {
-	User.findOne({ email: req.body.email }, (err, data) => {
-		if (!data) {
-			res.send({ "Success": "This Email Is not regestered!" });
-		} else {
-			if (req.body.password == req.body.passwordConf) {
-				data.password = req.body.password;
-				data.passwordConf = req.body.passwordConf;
-
-				data.save((err, Person) => {
-					if (err)
-						console.log(err);
-					else
-						console.log('Success');
-					res.send({ "Success": "Password changed!" });
-				});
-			} else {
-				res.send({ "Success": "Password does not matched! Both Password should be same." });
-			}
-		}
-	});
-
-});
-
-module.exports = router;
+window.addEventListener("load", start);

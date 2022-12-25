@@ -63,6 +63,7 @@ const db = getFirestore();
 
 const start = () => {
   document.getElementById("login").addEventListener("click", login);
+  /*
   document.getElementById("logout").addEventListener("click", logout);
   document
     .getElementById("delete-account")
@@ -71,11 +72,13 @@ const start = () => {
   document.getElementById("read").addEventListener("click", readContent);
   document.getElementById("update").addEventListener("click", updateContent);
   document.getElementById("delete").addEventListener("click", deleteContent);
+  */
 };
 
 const login = () => {
   signInWithPopup(auth, providerGoogle)
-    alert("987987");
+  alert("S978797897");
+    
     .then((result) => {
       const credential = GoogleAuthProvider.credentialFromResult(result);
       // console.log("credential: ", credential);
@@ -101,7 +104,7 @@ const login = () => {
       // console.log("credential: ", credential);
     });
 };
-
+/*
 const logout = () => {
   auth
     .signOut()
@@ -207,5 +210,6 @@ const deleteContent = () => {
   document.getElementById("diary-title").value = "";
   document.getElementById("diary-content").value = "";
 };
+*/
 
 window.addEventListener("load", start);
